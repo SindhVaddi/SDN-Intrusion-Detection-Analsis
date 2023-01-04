@@ -1,0 +1,81 @@
+// Uniqueness constraints.
+CREATE CONSTRAINT ON (intrusion:Intrusion) ASSERT intrusion.IntrusionId IS UNIQUE;
+CREATE CONSTRAINT ON (class:Class) ASSERT class.Class IS UNIQUE;
+CREATE CONSTRAINT ON (flag:Flag) ASSERT flag.FlagId IS UNIQUE;
+//
+//
+//
+//
+//
+//
+// Create Intrusion node
+:auto USING PERIODIC COMMIT 500
+LOAD CSV With HEADERS FROM 'file:///SDN_intrusion_preprocessing.csv' AS row
+MERGE  
+  (intrusion:Intrusion {IntrusionId:row.Intrusion_Id})
+   ON CREATE SET intrusion.Destination_Port = row.Destination_Port,
+intrusion.Flow_Duration = row.Flow_Duration,
+intrusion.Total_Fwd_Packets = row.Total_Fwd_Packets,
+intrusion.Total_Backward_Packets = row.Total_Backward_Packets,
+intrusion.TotalLength_of_Fwd_Packets = row.TotalLength_of_Fwd_Packets,
+intrusion.Total_Length_of_Bwd_Packets = row.Total_Length_of_Bwd_Packets,
+intrusion.Fwd_Packet_Length_Mean = row.Fwd_Packet_Length_Mean,
+intrusion.Bwd_Packet_Length_Mean = row.Bwd_Packet_Length_Mean,
+intrusion.FlowBytes_s = row.FlowBytes_s,
+intrusion.Flow_Packets_s = row.Flow_Packets_s,
+intrusion.FwdPackets_s = row.FwdPackets_s,
+intrusion.Bwd_Packets_s = row.Bwd_Packets_s,
+intrusion.Packet_Length_Mean = row.Packet_Length_Mean,
+intrusion.Down_Up_Ratio = row.Down_Up_Ratio,
+intrusion.Average_Packet_Size = row.Average_Packet_Size,
+intrusion.ActiveMean = row.ActiveMean,
+intrusion.IdleMean = row.IdleMean,
+intrusion.SubflowFwd_Packets = row.SubflowFwd_Packets,
+intrusion.Subflow_Fwd_Bytes = row.Subflow_Fwd_Bytes,
+intrusion.Subflow_Bwd_Packets = row.Subflow_Bwd_Packets,
+intrusion.Subflow_Bwd_Bytes = row.Subflow_Bwd_Bytes;
+//
+//
+//
+//
+// Create Class Node
+:auto USING PERIODIC COMMIT 500
+LOAD CSV With HEADERS FROM 'file:///SDN_intrusion_preprocessing.csv' AS row
+MERGE 
+  (class:Class{Class:row.Class});
+//
+//
+//
+// 
+// Load Flag Node
+:auto USING PERIODIC COMMIT 500
+LOAD CSV With HEADERS FROM 'file:///SDN_intrusion_preprocessing.csv' AS row
+MERGE 
+  (flag:Flag {FlagId:row.Intrusion_Id})
+ON CREATE SET flag.FIN_Flag_Count=row.FIN_Flag_Count,
+flag.SYN_Flag_Count=row.SYN_Flag_Count,
+flag.ACK_Flag_Count=row.ACK_Flag_Count,
+flag.URG_Flag_Count=row.URG_Flag_Count,
+flag.CWE_Flag_Count=row.CWE_Flag_Count,
+flag.ECE_Flag_Count=row.ECE_Flag_Count;
+//
+//
+//
+//
+//
+//
+//
+:auto USING PERIODIC COMMIT 500
+LOAD CSV With HEADERS FROM 'file:///SDN_intrusion_preprocessing.csv' AS row
+     MATCH (intrusion:Intrusion {IntrusionId:row.Intrusion_Id})
+     MATCH (class:Class{Class:row.Class})
+     MERGE (intrusion)-[:DIVIDE_INTO]->(class);
+//
+//
+:auto USING PERIODIC COMMIT 500
+LOAD CSV With HEADERS FROM 'file:///SDN_intrusion_preprocessing.csv' AS row
+     MATCH (intrusion:Intrusion {IntrusionId:row.Intrusion_Id})
+     MATCH (flag:Flag {FlagId:row.Intrusion_Id})
+     MERGE (intrusion)-[:HAS]->(flag);
+//
+//
